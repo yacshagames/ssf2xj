@@ -16,6 +16,25 @@ print("Street Fighter 2 Champion Edition - Yacsha Training mode for Fightcade2 v
 
 local game
 local romname
+local lock_action_param
+local lock_action_selector = 0
+local current_frame = 0
+
+local actions = {
+	  { 0x00,  "Neutral (Stand)" },
+      { 0xfd,  "Block Everything" },
+      { 0xfc,  "Block Ground Attacks" },
+      { 0x08,  "Up (Jump)" },
+      { 0x09,  "Up-Right" },
+      { 0x0A,  "Up-Left" },
+      { 0x04,  "Down (Crouch)" },
+      { 0x05,  "Down-Right" },
+      { 0x06,  "Down-Left" },
+      { 0x01,  "Right" },
+      { 0x02,  "Left" },
+      { 0xff,  "Throw-Right (fierce throw)" },
+      { 0xfe,  "Throw-Left (fierce throw)" },
+    }
 
 local profile = {
 	{
@@ -245,11 +264,20 @@ end
 
 local function lock_actions()
 
-	--if lock_action_selector >= game.max_stage then
-	--	lock_action_selector=-1
-	--end
-	   
+	if current_frame >= 59 then
+		current_frame = 0
+	end
 	current_frame = current_frame + 1
+	
+	if lock_action_selector == 0 then
+		return
+	end
+
+	if lock_action_param <  0x0F then
+		memory.writebyte(0xFF8651,lock_action_param)
+	end
+
+	
 end
 
 stage_selector = -1
@@ -1919,9 +1947,9 @@ input.registerhotkey(2, function()
 	print((draw_hitboxes and "> Showing" or "> Hiding") .. " Hitboxes")
 end)
 
-input.registerhotkey(3, function()
-	toggleplayer()
-end)
+--input.registerhotkey(3, function()
+--	toggleplayer()
+--end)
 
 input.registerhotkey(4, function()
 	-- Toggle ST HUD
@@ -1981,48 +2009,34 @@ input.registerhotkey(5, function()
 end)
 
 
-input.registerhotkey(6, function()
-	
-	if lock_action_selector >= game.max_stage then
+input.registerhotkey(3, function()
+		
+	if lock_action_selector >= 13 then
 		lock_action_selector=-1
 	end
 	lock_action_selector = lock_action_selector + 1
-
-	if stage_selector == 0 then
-		print("> Stage: Japan (Ryu)")
-	elseif stage_selector == 1 then
-		print("> Stage: Japan (Honda)")
-	elseif stage_selector == 2 then
-		print("> Stage: Brazil (Blanka)")
-	elseif stage_selector == 3 then
-		print("> Stage: USA (Guile)")
-	elseif stage_selector == 4 then
-		print("> Stage: USA (Ken)")
-	elseif stage_selector == 5 then
-		print("> Stage: China (Chun-Li)")
-	elseif stage_selector == 6 then
-		print("> Stage: USSR (Zangief)")
-	elseif stage_selector == 7 then
-		print("> Stage: India (Dhalsim)")
-	elseif stage_selector == 8 then
-		print("> Stage: Thailand (Dictator)")
-	elseif stage_selector == 9 then
-		print("> Stage: Thailand (Sagat)")
-	elseif stage_selector == 0xa then
-		print("> Stage: USA (Boxer)")
-	elseif stage_selector == 0xb then
-		print("> Stage: Spain (Claw)")
-	elseif stage_selector == 0xc then
-		print("> Stage: England (Cammy)")
-	elseif stage_selector == 0xd then
-		print("> Stage: Mexico (T.Hawk)")
-	elseif stage_selector == 0xe then
-		print("> Stage: HongKong (Fei-Long)")
-	elseif stage_selector == 0xf then
-		print("> Stage: Jamaica (DeeJay)")
+	
+	if lock_action_selector == 0 then
+		-- off lock actions
+		memory.writeword(0xFF8650,0x0)
+		memory.writeword(0x379F4,0x6710)
+		memory.writeword(0x20EA,0x3BD6)
+		memory.writeword(0x20EC,0x007A)
+		memory.writeword(0x20EE,0x0650)
+		return
 	else
-		print("> Stage: ", stage_selector)
-	end
+		-- on lock actions
+		memory.writeword(0x379F4,0x4E71)
+		memory.writeword(0x20EA,0x4E71)
+		memory.writeword(0x20EC,0x4E71)
+		memory.writeword(0x20EE,0x4E71)
+	end	
+	
+	lock_action_param = actions[lock_action_selector][1]
+	action_name = actions[lock_action_selector][2]
+
+	print("> Lock action: " .. action_name)
+	
 end)
 
 
